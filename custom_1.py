@@ -66,7 +66,7 @@ class CustomConfig(Config):
     IMAGES_PER_GPU = 2
 
     # Number of classes (including background)
-    NUM_CLASSES = 1 + 2  ### Background + 2 classes (scratch, demage) 2개class로 수정
+    NUM_CLASSES = 1 + 2  ### Background + 2 classes (scratch, dent) 2개class로 수정
 
     ###수정
     # Use smaller images for faster training. Set the limits of the small side
@@ -94,7 +94,7 @@ class CustomDataset(utils.Dataset):
         """
         # Add classes. We have only one class to add.
         self.add_class("damage", 1, "scratch")
-        self.add_class("damage", 2, "damage") ### class 추가
+        self.add_class("damage", 2, "dent") ### class 추가
 
         # Train or validation dataset?
         assert subset in ["train", "val"]
@@ -115,14 +115,14 @@ class CustomDataset(utils.Dataset):
         #   'size': 100202
         # }
         # We mostly care about the x and y coordinates of each region
-        annotations1 = json.load(open(os.path.join(dataset_dir, "via_region_data.json")))
+        annotations1 = json.load(open(os.path.join(dataset_dir, "all_train.json")))
         # print(annotations1)
         annotations = list(annotations1.values())  # don't need the dict keys
 
         # The VIA tool saves images in the JSON even if they don't have any
         # annotations. Skip unannotated images.
         annotations = [a for a in annotations if a['regions']]
-        # class_nums = {'scratch': 1, 'damage': 2}
+        # class_nums = {'scratch': 1, 'dent': 2}
 
         # Add images
         for a in annotations:
@@ -140,7 +140,7 @@ class CustomDataset(utils.Dataset):
                 try:
                     if n['name'] == 'scratch':
                         num_ids.append(1)
-                    elif n['name'] == 'damage':
+                    elif n['name'] == 'dent':
                         num_ids.append(2)
                 except:
                     pass
@@ -219,7 +219,7 @@ def train(model):
     print("Training network heads")
     model.train(dataset_train, dataset_val,
                 learning_rate=config.LEARNING_RATE,
-                epochs=10,
+                epochs=50,
                 layers='heads')
 
 
@@ -257,7 +257,8 @@ def detect_and_color_splash(model, image_path=None, video_path=None):
         # Color splash
         splash = color_splash(image, r['masks'])
         # Save output
-        class_names=['scratch', 'damage']
+        class_names=['scratch', 'dent']
+
         file_name = "splash_{:%Y%m%dT%H%M%S}.png".format(datetime.datetime.now())
         skimage.io.imsave(file_name, splash)
 
